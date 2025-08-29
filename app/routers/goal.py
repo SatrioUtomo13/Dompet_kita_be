@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List
-from app.models.goal import GoalCreate, GoalRead
+from app.models.goal import GoalCreate, GoalRead, DepositRequest
 from app.database.models.goal_model import Goal
 from app.database.models.association import goal_members
 from app.database.models.user_model import User
@@ -11,7 +11,10 @@ from app.core.security import get_current_user
 router = APIRouter(prefix="/api/goals", tags=["Goals"])
 
 @router.post("/")
-def create_goal(goal:GoalCreate, db: Session = Depends(get_db)):
+def create_goal(
+  goal:GoalCreate, 
+  db: Session = Depends(get_db),
+  current_user: User = Depends(get_current_user)):
   """ 
   Create a new goal
   """
@@ -23,15 +26,19 @@ def create_goal(goal:GoalCreate, db: Session = Depends(get_db)):
     description=goal.description
   )
 
+  # If user is empty, add current_user automatically
+  if not goal.members or len(goal.members) == 0:
+    db_goal.members.append(current_user)
+  else :
   # Add members by email
-  for email in goal.members:
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-      raise HTTPException(
-        status_code=404, 
-        detail=f"User with email {email} not found"
-      )
-    db_goal.members.append(user)
+    for email in goal.members:
+      user = db.query(User).filter(User.email == email).first()
+      if not user:
+        raise HTTPException(
+          status_code=404, 
+          detail=f"User with email {email} not found"
+        )
+      db_goal.members.append(user)
 
   db.add(db_goal)
   db.commit()
@@ -47,11 +54,17 @@ def get_goals(db: Session = Depends(get_db), current_user: User = Depends(get_cu
   return goals
 
 @router.post("/{goal_id}/deposit")
-def deposit_to_goal(goal_id: int, amount: float, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def deposit_to_goal(
+  goal_id: int, 
+  request: DepositRequest,
+  db: Session = Depends(get_db), 
+  current_user: User = Depends(get_current_user)):
   """ 
   Deposit an amount to a specific goal
   Only members of the goal can deposit
   """
+
+  amount = request.amount
 
   # Check goal exist
   goal = db.query(Goal).filter(Goal.id == goal_id).first()

@@ -35,3 +35,6 @@ class GoalDropdown(BaseModel):
 
   class config:
     orm_mode = True
+
+class DepositRequest(BaseModel):
+  amount: float
