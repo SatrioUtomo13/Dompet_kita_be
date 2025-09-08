@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List
-from app.models.goal import GoalCreate, GoalRead, DepositRequest
+from app.models.goal import GoalCreate, GoalRead, DepositRequest, GoalMembersResponse
 from app.database.models.goal_model import Goal
-from app.database.models.association import goal_members
+from app.database.models.association import GoalMember
 from app.database.models.user_model import User
 from app.db import get_db
 from app.core.security import get_current_user
@@ -53,7 +53,20 @@ def get_goals(db: Session = Depends(get_db), current_user: User = Depends(get_cu
   goals = db.query(Goal).options(joinedload(Goal.members)).filter(Goal.members.any(id=current_user.id)).all()
   return goals
 
-@router.post("/{goal_id}/deposit")
+@router.get("/{goal_id}/member")
+def get_goal_members(goal_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+  """ 
+  Get all members of a specific goal
+  only members of the goal can see this
+  """
+  goal = db.query(Goal).filter(Goal.id == goal_id, Goal.members.any(id=current_user.id)).first()
+
+  if not goal:
+    raise HTTPException(status_code=404, detail="Goal not found or you are not a member of this goal")
+
+  return goal.members
+
+@router.post("/{goal_id}/deposit", response_model=GoalMembersResponse)
 def deposit_to_goal(
   goal_id: int, 
   request: DepositRequest,
@@ -73,8 +86,8 @@ def deposit_to_goal(
   
   # Check if user is a member of the goal
   member = (
-    db.query(goal_members)
-    .filter(goal_members.c.goal_id == goal_id, goal_members.c.user_id == current_user.id)
+    db.query(GoalMember)
+    .filter(GoalMember.goal_id == goal_id, GoalMember.user_id == current_user.id)
     .first()
     )
   

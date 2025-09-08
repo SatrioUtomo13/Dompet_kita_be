@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from app.db import Base
-from .association import goal_members
+from .association import GoalMember
 
 class User(Base):
 
@@ -17,4 +17,4 @@ class User(Base):
   password = Column(String, nullable=False)
 
   # Relasi ke Goal (many-to-many)
-  goals = relationship("Goal", secondary=goal_members, back_populates="members")
+  goal_members = relationship("GoalMember", back_populates="user", cascade="all, delete-orphan")

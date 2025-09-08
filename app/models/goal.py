@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
+from datetime import datetime
 
 # Pydantic schema for creating a goal
 class GoalCreate(BaseModel):
@@ -17,6 +18,14 @@ class UserOut(BaseModel):
 
   class config:
     orm_mode = True
+
+class GoalMemberOut(BaseModel):
+  id: int
+  name: str
+  email: EmailStr
+  role: str
+  total_contributed: float
+  last_activity: Optional[datetime]
   
 class GoalRead(BaseModel):
   id: int
@@ -38,3 +47,6 @@ class GoalDropdown(BaseModel):
 
 class DepositRequest(BaseModel):
   amount: float
+
+class GoalMembersResponse(BaseModel):
+  members: List[GoalMemberOut]

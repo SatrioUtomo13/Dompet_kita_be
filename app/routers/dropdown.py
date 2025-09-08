@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.models.goal import GoalDropdown, GoalRead
 from app.database.models.goal_model import Goal
-from app.database.models.association import goal_members
 from app.database.models.user_model import User
 from app.db import get_db
 from app.core.security import get_current_user

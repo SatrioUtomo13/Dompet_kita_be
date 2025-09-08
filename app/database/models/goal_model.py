@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table
 from sqlalchemy.orm import relationship
 from app.db import Base
-from .association import goal_members
+from .association import GoalMember
 
 class Goal(Base):
 
@@ -18,4 +18,4 @@ class Goal(Base):
   description = Column(String, nullable=True)
 
   # Relasi ke User (many-to-many)
-  members = relationship("User", secondary=goal_members, back_populates="goals")
+  members = relationship("GoalMember", back_populates="goal", cascade="all, delete-orphan")
